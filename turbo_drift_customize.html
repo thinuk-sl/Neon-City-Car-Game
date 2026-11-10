@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turbo Drift - Created By Thinuk Insilu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .arcade-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4);
+        }
+        .text-glow-gold {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.8), 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.8); }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center overflow-hidden relative select-none">
+
+    <!-- Ambient Background Glow -->
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Main Game Display Container -->
+    <div id="game-container" class="relative w-full max-w-md h-[92vh] max-h-[880px] bg-slate-900/90 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden backdrop-blur-md">
+
+        <!-- Top HUD Bar -->
+        <div id="game-hud" class="hidden absolute top-0 left-0 right-0 p-3 bg-slate-950/85 backdrop-blur border-b border-slate-800/80 flex justify-between items-center z-20">
+            <div class="flex flex-col">
+                <span class="text-[9px] text-slate-400 arcade-font">SCORE</span>
+                <span id="hud-score" class="text-sm font-black text-cyan-400 arcade-font">0</span>
+            </div>
+
+            <!-- Health & Coins HUD -->
+            <div class="flex flex-col items-center w-28">
+                <div class="flex justify-between w-full text-[9px] text-slate-400 arcade-font mb-0.5">
+                    <span>SHIELD</span>
+                    <span id="hud-hp-val">100%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mb-1">
+                    <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-cyan-500 to-emerald-400 transition-all duration-200" style="width: 100%;"></div>
+                </div>
+                <div class="text-[10px] text-amber-400 font-bold arcade-font flex items-center gap-1">
+                    🪙 <span id="hud-coins">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-end">
+                <span class="text-[9px] text-slate-400 arcade-font">SPEED</span>
+                <span id="hud-speed" class="text-sm font-black text-amber-400 arcade-font">0 KM/H</span>
+            </div>
+        </div>
+
+        <!-- Canvas Game Screen -->
+        <div class="relative flex-1 w-full h-full overflow-hidden">
+            <canvas id="gameCanvas" class="w-full h-full block bg-slate-950"></canvas>
+
+            <!-- 1. MAIN START MENU OVERLAY -->
+            <div id="main-menu" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-between p-6">
+                <div class="w-full text-center mt-6">
+                    <h1 class="text-3xl font-black arcade-font tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-amber-400 text-glow">
+                        TURBO DRIFT
+                    </h1>
+                    <p class="text-[10px] text-slate-400 arcade-font tracking-widest mt-1">RETRO HIGHWAY RACER</p>
+
+                    <!-- Creator Badge -->
+                    <div class="mt-4 inline-block px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 text-xs font-semibold tracking-wide shadow-lg">
+                        Created By <span class="font-bold text-amber-300">Thinuk Insilu</span>
+                    </div>
+                </div>
+
+                <!-- Animated Mini Preview -->
+                <div class="relative w-40 h-40 bg-slate-900 rounded-2xl border border-slate-800 flex items-center justify-center shadow-inner overflow-hidden">
+                    <canvas id="menuPreviewCanvas" class="w-36 h-36"></canvas>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="w-full space-y-3 mb-4">
+                    <button onclick="startGame()" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black arcade-font tracking-wider rounded-xl shadow-lg glow-cyan transition transform active:scale-95 text-xs flex items-center justify-center gap-2">
+                        <span>START RACE</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+                    </button>
+                    <button onclick="openGarage()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold arcade-font rounded-xl transition transform active:scale-95 text-xs flex items-center justify-center gap-2">
+                        <span>🛠️ CUSTOMIZE GARAGE</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. GARAGE CUSTOMIZATION MENU OVERLAY -->
+            <div id="garage-menu" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col p-5 overflow-y-auto">
+                
+                <div class="text-center mt-1 mb-2">
+                    <h2 class="text-2xl font-black arcade-font text-cyan-400">GARAGE TUNING</h2>
+                    <div class="mt-0.5 inline-block text-[10px] text-amber-400 font-medium">Created By Thinuk Insilu</div>
+                </div>
+
+                <!-- Live 2D Preview Canvas -->
+                <div class="relative w-full h-36 bg-gradient-to-b from-slate-900 to-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center my-1 shadow-inner overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#06b6d4_1px,transparent_1px)] [background-size:16px_16px]"></div>
+                    <canvas id="previewCanvas" class="w-32 h-32"></canvas>
+                    <div class="absolute bottom-1.5 right-3 text-[9px] text-cyan-400/80 arcade-font">LIVE PREVIEW</div>
+                </div>
+
+                <!-- Customization Controls -->
+                <div class="space-y-3 my-2 flex-1">
+                    <!-- Aesthetics Block -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <h3 class="text-[11px] font-bold text-slate-300 arcade-font flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> CAR PAINT & WHEELS
+                        </h3>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] text-slate-400">Body</label>
+                                <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                                    <input type="color" id="bodyColorPicker" value="#ef4444" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
+                                    <span id="bodyColorText" class="text-[9px] font-mono text-slate-300">#EF4444</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] text-slate-400">Stripe</label>
+                                <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                                    <input type="color" id="stripeColorPicker" value="#facc15" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
+                                    <span id="stripeColorText" class="text-[9px] font-mono text-slate-300">#FACC15</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-[10px] text-slate-400">Rims</label>
+                                <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                                    <input type="color" id="wheelColorPicker" value="#0f172a" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0">
+                                    <span id="wheelColorText" class="text-[9px] font-mono text-slate-300">#0F172A</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Performance Upgrades -->
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-[11px] font-bold text-slate-300 arcade-font flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-pink-500"></span> STAT TUNING
+                            </h3>
+                            <span class="text-[11px] font-bold arcade-font text-amber-400">PTS: <span id="points-left">5</span></span>
+                        </div>
+
+                        <!-- Stat 1: Speed -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-200">Top Speed</span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustStat('speed', -1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                                <span id="stat-speed-val" class="w-4 text-center font-mono font-bold text-cyan-400 text-xs">3</span>
+                                <button onclick="adjustStat('speed', 1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Stat 2: Handling -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-200">Handling</span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustStat('handling', -1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                                <span id="stat-handling-val" class="w-4 text-center font-mono font-bold text-cyan-400 text-xs">3</span>
+                                <button onclick="adjustStat('handling', 1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Stat 3: Shield -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-200">Shield Armor</span>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="adjustStat('armor', -1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                                <span id="stat-armor-val" class="w-4 text-center font-mono font-bold text-cyan-400 text-xs">3</span>
+                                <button onclick="adjustStat('armor', 1)" class="w-6 h-6 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="closeGarage()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold arcade-font rounded-xl border border-slate-700 text-xs">BACK</button>
+                    <button onclick="startGame()" class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-pink-600 hover:from-cyan-400 hover:to-pink-500 text-white font-black arcade-font rounded-xl shadow-lg text-xs">RACE NOW</button>
+                </div>
+            </div>
+
+            <!-- 3. GAME OVER OVERLAY -->
+            <div id="gameover-overlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center">
+                <h2 class="text-3xl font-black arcade-font text-pink-500 text-glow mb-1">CRASHED!</h2>
+                <div class="mb-4 text-xs font-semibold text-amber-300 uppercase tracking-wider">Created By Thinuk Insilu</div>
+
+                <div class="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-5 space-y-2">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400 arcade-font">SCORE</span>
+                        <span id="go-score" class="font-bold text-cyan-400 arcade-font">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400 arcade-font">HIGH SCORE</span>
+                        <span id="go-highscore" class="font-bold text-amber-400 arcade-font">0</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-400 arcade-font">COINS COLLECTED</span>
+                        <span id="go-coins" class="font-bold text-yellow-400 arcade-font">0</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2.5 w-full max-w-xs">
+                    <button onclick="restartGame()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold arcade-font rounded-xl shadow text-xs">RESTART RACE</button>
+                    <button onclick="returnToMenu()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold arcade-font rounded-xl border border-slate-700 text-xs">MAIN MENU</button>
+                </div>
+            </div>
+
+            <!-- On-Screen Mobile Controls (Left, Right, Accel, Brake) -->
+            <div id="touch-controls" class="absolute bottom-4 left-0 right-0 px-4 flex justify-between items-center pointer-events-none z-20 md:hidden">
+                <div class="flex gap-2">
+                    <button id="btn-left" class="w-14 h-14 bg-slate-900/80 border border-slate-700/80 rounded-2xl flex items-center justify-center text-cyan-400 text-xl pointer-events-auto backdrop-blur active:bg-cyan-500/40 shadow-lg">◀</button>
+                    <button id="btn-right" class="w-14 h-14 bg-slate-900/80 border border-slate-700/80 rounded-2xl flex items-center justify-center text-cyan-400 text-xl pointer-events-auto backdrop-blur active:bg-cyan-500/40 shadow-lg">▶</button>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btn-brake" class="w-14 h-14 bg-slate-900/80 border border-red-500/40 rounded-2xl flex items-center justify-center text-red-400 font-bold text-xs pointer-events-auto backdrop-blur active:bg-red-500/40 shadow-lg">BRAKE</button>
+                    <button id="btn-accel" class="w-14 h-14 bg-slate-900/80 border border-emerald-500/40 rounded-2xl flex items-center justify-center text-emerald-400 font-bold text-xs pointer-events-auto backdrop-blur active:bg-emerald-500/40 shadow-lg">GAS</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="py-2 px-4 bg-slate-950 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center z-20">
+            <span>Created By <strong class="text-amber-400">Thinuk Insilu</strong></span>
+            <button onclick="toggleAudio()" id="audio-btn" class="text-slate-400 hover:text-cyan-400 transition font-mono">🔊 AUDIO: ON</button>
+        </div>
+    </div>
+
+    <script>
+        // --- WEB AUDIO API SYNTHESIZER ---
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(900, now + 0.04);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+                    osc.start(now); osc.stop(now + 0.04);
+                } else if (type === 'coin') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(980, now);
+                    osc.frequency.setValueAtTime(1400, now + 0.07);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'repair') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.25);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                } else if (type === 'crash') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.linearRampToValueAtTime(40, now + 0.35);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now); osc.stop(now + 0.35);
+                } else if (type === 'slip') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.linearRampToValueAtTime(150, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                }
+            } catch(e){}
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('audio-btn').innerText = soundEnabled ? "🔊 AUDIO: ON" : "🔇 AUDIO: OFF";
+            playSound('click');
+        }
+
+        // --- GAME ENGINE VARIABLES ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const menuPreviewCanvas = document.getElementById('menuPreviewCanvas');
+        const menuPreviewCtx = menuPreviewCanvas.getContext('2d');
+
+        let gameState = 'MENU'; 
+        let highScore = localStorage.getItem('thinuk_turbo_highscore') || 0;
+
+        let customData = {
+            bodyColor: '#ef4444',
+            stripeColor: '#facc15',
+            wheelColor: '#0f172a',
+            stats: { speed: 3, handling: 3, armor: 3 },
+            availablePoints: 5
+        };
+
+        const keys = { left: false, right: false, accel: false, brake: false };
+        let touchLeft = false, touchRight = false, touchAccel = false, touchBrake = false;
+
+        let player = { x: 0, y: 0, width: 44, height: 78, vx: 0, spin: 0 };
+        let road = { width: 300, leftX: 0, lineOffset: 0 };
+        let obstacles = [];
+        let particles = [];
+        let popups = [];
+        let score = 0;
+        let coins = 0;
+        let distance = 0;
+        let currentSpeed = 0;
+        let playerHp = 100;
+        let maxHp = 100;
+        let spawnTimer = 0;
+
+        // --- CUSTOMIZATION EVENT LISTENERS ---
+        document.getElementById('bodyColorPicker').addEventListener('input', (e) => {
+            customData.bodyColor = e.target.value;
+            document.getElementById('bodyColorText').innerText = e.target.value.toUpperCase();
+            drawCarPreviews();
+        });
+        document.getElementById('stripeColorPicker').addEventListener('input', (e) => {
+            customData.stripeColor = e.target.value;
+            document.getElementById('stripeColorText').innerText = e.target.value.toUpperCase();
+            drawCarPreviews();
+        });
+        document.getElementById('wheelColorPicker').addEventListener('input', (e) => {
+            customData.wheelColor = e.target.value;
+            document.getElementById('wheelColorText').innerText = e.target.value.toUpperCase();
+            drawCarPreviews();
+        });
+
+        function adjustStat(statName, amount) {
+            initAudio(); playSound('click');
+            const currentVal = customData.stats[statName];
+            if (amount > 0 && customData.availablePoints > 0 && currentVal < 5) {
+                customData.stats[statName]++; customData.availablePoints--;
+            } else if (amount < 0 && currentVal > 1) {
+                customData.stats[statName]--; customData.availablePoints++;
+            }
+            document.getElementById('stat-speed-val').innerText = customData.stats.speed;
+            document.getElementById('stat-handling-val').innerText = customData.stats.handling;
+            document.getElementById('stat-armor-val').innerText = customData.stats.armor;
+            document.getElementById('points-left').innerText = customData.availablePoints;
+        }
+
+        // --- CAR RENDERING ENGINE ---
+        function drawCarBody(context, x, y, w, h, bodyCol, stripeCol, wheelCol, angle = 0) {
+            context.save();
+            context.translate(x, y);
+            context.rotate(angle);
+
+            // Wheels
+            context.fillStyle = wheelCol;
+            context.fillRect(-w/2 - 4, -h/3, 5, 16);
+            context.fillRect(w/2 - 1, -h/3, 5, 16);
+            context.fillRect(-w/2 - 4, h/4, 5, 18);
+            context.fillRect(w/2 - 1, h/4, 5, 18);
+
+            // Main Body
+            context.fillStyle = bodyCol;
+            context.beginPath();
+            context.roundRect(-w/2, -h/2, w, h, [12, 12, 8, 8]);
+            context.fill();
+
+            // Racing Stripe
+            context.fillStyle = stripeCol;
+            context.fillRect(-3, -h/2, 6, h);
+
+            // Roof / Windshield
+            context.fillStyle = '#0f172a';
+            context.beginPath();
+            context.roundRect(-w/2 + 5, -h/4, w - 10, h/2, [6, 6, 4, 4]);
+            context.fill();
+
+            // Headlights
+            context.fillStyle = '#fde047';
+            context.fillRect(-w/2 + 3, -h/2 + 1, 7, 4);
+            context.fillRect(w/2 - 10, -h/2 + 1, 7, 4);
+
+            // Taillights
+            context.fillStyle = '#ef4444';
+            context.fillRect(-w/2 + 3, h/2 - 5, 7, 3);
+            context.fillRect(w/2 - 10, h/2 - 5, 7, 3);
+
+            context.restore();
+        }
+
+        function drawCarPreviews() {
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            drawCarBody(previewCtx, previewCanvas.width/2, previewCanvas.height/2, 44, 78, customData.bodyColor, customData.stripeColor, customData.wheelColor, 0);
+
+            menuPreviewCtx.clearRect(0, 0, menuPreviewCanvas.width, menuPreviewCanvas.height);
+            drawCarBody(menuPreviewCtx, menuPreviewCanvas.width/2, menuPreviewCanvas.height/2, 44, 78, customData.bodyColor, customData.stripeColor, customData.wheelColor, 0);
+        }
+
+        function resizeCanvases() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            previewCanvas.width = 128; previewCanvas.height = 128;
+            menuPreviewCanvas.width = 144; menuPreviewCanvas.height = 144;
+            drawCarPreviews();
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // --- MENU NAVIGATION & FLOW ---
+        function openGarage() {
+            playSound('click');
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('garage-menu').classList.remove('hidden');
+            drawCarPreviews();
+        }
+        function closeGarage() {
+            playSound('click');
+            document.getElementById('garage-menu').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+        function startGame() {
+            initAudio(); playSound('click');
+            gameState = 'PLAYING';
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('garage-menu').classList.add('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('game-hud').classList.remove('hidden');
+
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 130;
+            player.vx = 0;
+            player.spin = 0;
+
+            maxHp = 60 + customData.stats.armor * 20;
+            playerHp = maxHp;
+            score = 0; coins = 0; distance = 0;
+            currentSpeed = 60 + customData.stats.speed * 10;
+            obstacles = []; particles = []; popups = []; spawnTimer = 0;
+
+            updateHud();
+        }
+        function returnToMenu() {
+            playSound('click');
+            gameState = 'MENU';
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('game-hud').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            drawCarPreviews();
+        }
+        function restartGame() {
+            startGame();
+        }
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            playSound('crash');
+            if (score > highScore) {
+                highScore = Math.floor(score);
+                localStorage.setItem('thinuk_turbo_highscore', highScore);
+            }
+            document.getElementById('go-score').innerText = Math.floor(score);
+            document.getElementById('go-highscore').innerText = highScore;
+            document.getElementById('go-coins').innerText = coins;
+            document.getElementById('gameover-overlay').classList.remove('hidden');
+        }
+
+        function updateHud() {
+            document.getElementById('hud-score').innerText = Math.floor(score);
+            document.getElementById('hud-coins').innerText = coins;
+            document.getElementById('hud-speed').innerText = Math.floor(currentSpeed) + ' KM/H';
+            const hpPct = Math.max(0, Math.round((playerHp / maxHp) * 100));
+            document.getElementById('hud-hp-val').innerText = hpPct + '%';
+            document.getElementById('hud-hp-bar').style.width = hpPct + '%';
+        }
+
+        // --- KEYBOARD & TOUCH CONTROLS ---
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === 'ArrowUp' || e.key === 'w') keys.accel = true;
+            if (e.key === 'ArrowDown' || e.key === 's') keys.brake = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            if (e.key === 'ArrowUp' || e.key === 'w') keys.accel = false;
+            if (e.key === 'ArrowDown' || e.key === 's') keys.brake = false;
+        });
+
+        const bindTouch = (id, setter) => {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); setter(true); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); setter(false); });
+            el.addEventListener('mousedown', () => setter(true));
+            el.addEventListener('mouseup', () => setter(false));
+        };
+        bindTouch('btn-left', v => touchLeft = v);
+        bindTouch('btn-right', v => touchRight = v);
+        bindTouch('btn-accel', v => touchAccel = v);
+        bindTouch('btn-brake', v => touchBrake = v);
+
+        // --- GAME ENTITIES & PARTICLES ---
+        class Obstacle {
+            constructor() {
+                road.width = Math.min(canvas.width * 0.82, 320);
+                road.leftX = (canvas.width - road.width) / 2;
+                const laneWidth = road.width / 3;
+                const lane = Math.floor(Math.random() * 3);
+                this.x = road.leftX + lane * laneWidth + laneWidth / 2;
+                this.y = -120;
+                this.width = 42; this.height = 76;
+                this.speedOffset = (Math.random() - 0.5) * 2;
+                
+                const rand = Math.random();
+                if (rand < 0.35) this.type = 'coin';
+                else if (rand < 0.45) this.type = 'repair';
+                else if (rand < 0.60) this.type = 'oil';
+                else this.type = 'car';
+
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update(gameScrollSpeed) {
+                this.y += gameScrollSpeed * 0.4 + this.speedOffset;
+            }
+            draw(context) {
+                context.save();
+                if (this.type === 'coin') {
+                    context.beginPath();
+                    context.arc(this.x, this.y, 14, 0, Math.PI * 2);
+                    context.fillStyle = '#facc15'; context.shadowColor = '#facc15'; context.shadowBlur = 10;
+                    context.fill(); context.lineWidth = 2.5; context.strokeStyle = '#ca8a04'; context.stroke();
+                    context.fillStyle = '#713f12'; context.font = 'bold 12px Orbitron';
+                    context.textAlign = 'center'; context.textBaseline = 'middle';
+                    context.fillText('$', this.x, this.y);
+                } else if (this.type === 'repair') {
+                    context.fillStyle = '#10b981'; context.shadowColor = '#10b981'; context.shadowBlur = 10;
+                    context.beginPath(); context.roundRect(this.x - 14, this.y - 14, 28, 28, 6); context.fill();
+                    context.fillStyle = '#ffffff'; context.fillRect(this.x - 3, this.y - 9, 6, 18); context.fillRect(this.x - 9, this.y - 3, 18, 6);
+                } else if (this.type === 'oil') {
+                    context.fillStyle = '#020617'; context.beginPath();
+                    context.ellipse(this.x, this.y, 20, 12, 0, 0, Math.PI * 2); context.fill();
+                    context.strokeStyle = '#334155'; context.stroke();
+                } else {
+                    drawCarBody(context, this.x, this.y, this.width, this.height, this.color, '#1e293b', '#0f172a', Math.PI);
+                }
+                context.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3 + 2;
+                this.radius = Math.random() * 3 + 1;
+                this.alpha = 1; this.color = color;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.alpha -= 0.04; }
+            draw(context) {
+                context.save(); context.globalAlpha = Math.max(0, this.alpha);
+                context.fillStyle = this.color; context.beginPath();
+                context.arc(this.x, this.y, this.radius, 0, Math.PI * 2); context.fill();
+                context.restore();
+            }
+        }
+
+        class PopupText {
+            constructor(x, y, text, color) {
+                this.x = x; this.y = y; this.text = text; this.color = color; this.alpha = 1;
+            }
+            update() { this.y -= 1; this.alpha -= 0.02; }
+            draw(context) {
+                context.save(); context.globalAlpha = Math.max(0, this.alpha);
+                context.fillStyle = this.color; context.font = 'bold 12px Orbitron';
+                context.textAlign = 'center'; context.fillText(this.text, this.x, this.y);
+                context.restore();
+            }
+        }
+
+        // --- MAIN ANIMATION LOOP ---
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            road.width = Math.min(canvas.width * 0.82, 320);
+            road.leftX = (canvas.width - road.width) / 2;
+
+            // Render Road
+            ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0f172a'; ctx.fillRect(road.leftX, 0, road.width, canvas.height);
+            ctx.fillStyle = '#06b6d4'; ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 8;
+            ctx.fillRect(road.leftX - 4, 0, 4, canvas.height); ctx.fillRect(road.leftX + road.width, 0, 4, canvas.height);
+            ctx.shadowBlur = 0;
+
+            const baseSpeed = 5 + customData.stats.speed * 0.8;
+            let speedMult = 1.0;
+            if (keys.accel || touchAccel) speedMult = 1.4;
+            if (keys.brake || touchBrake) speedMult = 0.6;
+            const scrollSpeed = baseSpeed * speedMult;
+
+            road.lineOffset = (road.lineOffset + scrollSpeed) % 40;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'; ctx.lineWidth = 3;
+            ctx.setLineDash([20, 20]); ctx.lineDashOffset = -road.lineOffset;
+            const laneWidth = road.width / 3;
+            ctx.beginPath();
+            ctx.moveTo(road.leftX + laneWidth, 0); ctx.lineTo(road.leftX + laneWidth, canvas.height);
+            ctx.moveTo(road.leftX + laneWidth * 2, 0); ctx.lineTo(road.leftX + laneWidth * 2, canvas.height);
+            ctx.stroke(); ctx.setLineDash([]);
+
+            if (gameState === 'PLAYING') {
+                distance += scrollSpeed * 0.1;
+                score += scrollSpeed * 0.05;
+                currentSpeed = scrollSpeed * 15;
+
+                // Handling & Steering
+                const handling = 3.5 + customData.stats.handling * 1.2;
+                let dir = 0;
+                if (keys.left || touchLeft) dir = -1;
+                if (keys.right || touchRight) dir = 1;
+
+                player.vx += dir * (handling * 0.25);
+                player.vx *= 0.82;
+                player.x += player.vx;
+
+                if (player.spin > 0) {
+                    player.spin -= 0.1;
+                    player.vx += (Math.random() - 0.5) * 4;
+                }
+
+                const minX = road.leftX + player.width / 2 + 4;
+                const maxX = road.leftX + road.width - player.width / 2 - 4;
+                if (player.x < minX) { player.x = minX; player.vx = 0; }
+                if (player.x > maxX) { player.x = maxX; player.vx = 0; }
+
+                // Exhaust particles
+                if (Math.random() < 0.6) {
+                    particles.push(new Particle(player.x + (Math.random() - 0.5) * 16, player.y + player.height / 2, '#06b6d4'));
+                }
+
+                // Spawning Obstacles
+                spawnTimer++;
+                if (spawnTimer > Math.max(25, 80 - scrollSpeed * 4)) {
+                    obstacles.push(new Obstacle());
+                    spawnTimer = 0;
+                }
+
+                // Process Obstacles
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    obs.update(scrollSpeed);
+                    obs.draw(ctx);
+
+                    const dx = player.x - obs.x;
+                    const dy = player.y - obs.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < (player.width / 2 + (obs.width || 28) / 2) * 0.75) {
+                        if (obs.type === 'coin') {
+                            playSound('coin'); coins++; score += 100;
+                            popups.push(new PopupText(obs.x, obs.y, '+100', '#facc15'));
+                        } else if (obs.type === 'repair') {
+                            playSound('repair'); playerHp = Math.min(maxHp, playerHp + 25);
+                            popups.push(new PopupText(obs.x, obs.y, 'REPAIR!', '#10b981'));
+                        } else if (obs.type === 'oil') {
+                            playSound('slip'); player.spin = Math.PI * 2;
+                            popups.push(new PopupText(obs.x, obs.y, 'SLIP!', '#38bdf8'));
+                        } else {
+                            playSound('crash'); playerHp -= 35;
+                            for (let p = 0; p < 12; p++) particles.push(new Particle(player.x, player.y, '#f59e0b'));
+                            if (playerHp <= 0) gameOver();
+                        }
+                        obstacles.splice(i, 1); continue;
+                    }
+                    if (obs.y > canvas.height + 100) obstacles.splice(i, 1);
+                }
+
+                updateHud();
+            }
+
+            // Draw Particles & Popups
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); particles[i].draw(ctx);
+                if (particles[i].alpha <= 0) particles.splice(i, 1);
+            }
+            for (let i = popups.length - 1; i >= 0; i--) {
+                popups[i].update(); popups[i].draw(ctx);
+                if (popups[i].alpha <= 0) popups.splice(i, 1);
+            }
+
+            // Draw Player Car
+            if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+                const tilt = player.vx * 0.025 + (player.spin ? Math.sin(player.spin) * 0.3 : 0);
+                drawCarBody(ctx, player.x, player.y, player.width, player.height, customData.bodyColor, customData.stripeColor, customData.wheelColor, tilt);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        resizeCanvases();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
